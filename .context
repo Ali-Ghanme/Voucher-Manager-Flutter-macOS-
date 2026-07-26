@@ -1,0 +1,164 @@
+# Voucher Manager – Project Context
+
+## Overview
+**Voucher Manager** (مدير بطاقات الفاوتشر) is a **macOS desktop application** built with **Flutter** for managing Wi-Fi/Internet voucher cards. It supports PDF import, bulk sale dispensing (with clipboard copy for quick SMS forwarding), stock tracking, undo, and a compact always-on-top floating window mode.
+
+- **Platform:** macOS only (uses `window_manager` and `sqflite_common_ffi`)
+- **Language:** Dart / Flutter (SDK >=3.3.0 <4.0.0)
+- **Architecture:** Clean Architecture (data → domain → presentation)
+- **State Management:** Riverpod (`flutter_riverpod`)
+- **Database:** SQLite via `sqflite_common_ffi`
+- **Locale:** Arabic (RTL), custom font `Bahij_TheSansArabic`
+- **Theme:** Dual light/dark theme, Material 2 (`useMaterial3: false`), system mode detection
+
+---
+
+## Directory Structure
+
+```
+voucher_manager/
+├── .context                         ← This file
+├── pubspec.yaml                     ← Dependencies & config
+├── analysis_options.yaml            ← Linting rules
+├── fonts/
+│   └── Bahij_TheSansArabic-Plain.ttf
+├── lib/
+│   ├── main.dart                    ← App entry point, ProviderScope, MaterialApp, window init
+│   ├── core/
+│   │   ├── constants/
+│   │   │   └── app_constants.dart   ← Window sizes, chip values, DB names, undo timeout, templates
+│   │   ├── error/
+│   │   │   └── exceptions.dart      ← Custom exceptions (InsufficientStock, NoBatch, EmptyPdf, etc.)
+│   │   ├── theme/
+│   │   │   ├── app_theme.dart       ← Light theme (appThemeLight)
+│   │   │   └── app_theme_dark.dart  ← Dark theme (appThemeDark)
+│   │   └── utils/
+│   │       ├── colors/
+│   │       │   ├── app_colors.dart  ← Centralized color palette (light, dark, common)
+│   │       │   └── hex_color.dart   ← HexColor utility class
+│   │       └── regex_patterns.dart  ← Regex for PDF voucher extraction
+│   ├── data/
+│   │   ├── datasources/
+│   │   │   └── database_helper.dart ← SQLite setup (FFI), table creation, migrations
+│   │   ├── models/
+│   │   │   ├── voucher_model.dart   ← Voucher entity (username, password, status, transactionId)
+│   │   │   └── batch_model.dart     ← BatchModel entity (fileName, totals, active flag)
+│   │   ├── repositories/
+│   │   │   └── voucher_repository_impl.dart ← Concrete SQLite implementation of VoucherRepository
+│   │   └── services/
+│   │       └── pdf_parser_service.dart      ← Syncfusion PDF text extraction + regex parsing
+│   ├── domain/
+│   │   └── repositories/
+│   │       └── voucher_repository.dart ← Abstract contract + DispenseResult + DailySummary DTOs
+│   └── presentation/
+│       ├── providers/
+│       │   ├── repository_providers.dart ← Riverpod providers for repo + isCompactMode state
+│       │   ├── voucher_notifier.dart     ← StateNotifier: refresh, import, dispense, undo, void
+│       │   └── voucher_state.dart        ← Immutable UI state (Equatable)
+│       ├── screens/
+│       │   ├── main_screen.dart           ← Full-size dashboard (summary cards, batch, history)
+│       │   └── compact_floating_screen.dart ← Compact always-on-top mode
+│       └── widgets/
+│           ├── batch_completion_dialog.dart  ← "Sold out" celebration dialog
+│           ├── custom_quantity_dialog.dart   ← Free-text quantity input dialog
+│           ├── quick_action_chips.dart       ← Quick-dispense chip row [1][2][5][10][20][مخصص]
+│           ├── stock_indicator.dart          ← Progress bar + remaining count
+│           └── voucher_display_panel.dart    ← Bold username/password display for SMS copy
+├── macos/                           ← macOS runner (Xcode project)
+├── test/                            ← Unit / widget tests
+└── build/                           ← Build outputs (generated)
+```
+
+---
+
+## Key Dependencies
+
+| Package                  | Purpose                                         |
+|--------------------------|--------------------------------------------------|
+| `flutter_riverpod`       | State management (StateNotifier + Provider)      |
+| `flutter_screenutil`     | Responsive sizing / text scaling                 |
+| `sqflite_common_ffi`     | SQLite for macOS desktop                         |
+| `window_manager`         | Window control (size, always-on-top, drag)       |
+| `syncfusion_flutter_pdf` | PDF text extraction for voucher parsing          |
+| `file_picker`            | Native macOS file dialog                         |
+| `uuid`                   | Transaction / batch ID generation                |
+| `equatable`              | Value equality for models and state              |
+| `intl`                   | Date formatting (Arabic-friendly)                |
+| `path` / `path_provider` | File system paths                                |
+
+---
+
+## Data Models
+
+### Voucher
+- Fields: `id`, `batchId`, `username`, `password`, `status` (AVAILABLE/SOLD/VOID), `soldAt`, `transactionId`
+- Maps 1:1 to a row in the `vouchers` SQLite table
+
+### BatchModel
+- Fields: `id`, `fileName`, `totalVouchers`, `soldVouchers`, `createdAt`, `completedAt`, `isCurrentActive`
+- Computed: `remainingVouchers`, `isSoldOut`, `progress`
+- Only one batch is active at a time
+
+---
+
+## State Management Flow
+
+```
+User Action → VoucherNotifier (StateNotifier)
+                → VoucherRepository (abstract)
+                    → VoucherRepositoryImpl (SQLite)
+                        → DatabaseHelper (sqflite_common_ffi)
+                ← VoucherState (immutable, Equatable)
+                    → UI rebuilds via ref.watch()
+```
+
+- `VoucherState` tracks: `status`, `activeBatch`, `availableCount`, `lastDispensed`, `lastClipboardMessage`, `canUndo`, `dailySummary`, `allBatches`, `errorMessage`
+- `isCompactModeProvider` (simple `StateProvider<bool>`) drives window mode switching
+
+---
+
+## Screens
+
+### MainScreen (full-size, 900×700)
+- Daily Summary Card (today's sales, batches completed, active stock, total batches)
+- Active Batch Section (file name, stock indicator, voucher display, quick-action chips, undo)
+- Batch History Section (list of all batches, switch active)
+- AppBar actions: Refresh, Enter compact mode
+
+### CompactFloatingScreen (always-on-top, 380×520)
+- Draggable custom title bar
+- Stock indicator + voucher display + quick chips
+- Copy to clipboard button
+- Undo + Void buttons
+
+---
+
+## Theme System
+
+- `appThemeLight()` in `app_theme.dart` – Light mode, white surfaces, black text
+- `appThemeDark()` in `app_theme_dark.dart` – Dark mode, dark surfaces, white text
+- `AppColors` in `app_colors.dart` – Centralized palette:
+  - `mainColor` (Orange-400: #FB923C)
+  - Light: `lightBackground`, `lightPrimaryText`, `lightSecondaryText`, `lightSurface`
+  - Dark: `darkBackground`, `darkPrimaryText`, `darkSecondaryText`, `darkSurface`
+  - Common: `errorColor`, grays, `colodBlue`, `searchColor`, `aleart`, `warning`
+- The app uses `theme:` and `darkTheme:` in MaterialApp, so the system handles mode switching automatically based on macOS appearance settings.
+
+---
+
+## PDF Import Flow
+
+1. User picks a PDF via `FilePicker`
+2. `PdfParserService` extracts text from all pages using Syncfusion
+3. Regex patterns extract username/password pairs
+4. A new `BatchModel` is created with a UUID-based ID
+5. All vouchers are inserted atomically in SQLite
+6. The new batch is set as the active batch
+
+## Dispense Flow
+
+1. User taps a quick-action chip (e.g., "5")
+2. `VoucherNotifier.dispense(5)` calls `repository.dispenseVouchers(5)`
+3. 5 AVAILABLE vouchers are atomically marked SOLD with a shared `transactionId`
+4. A formatted Arabic clipboard message is generated and copied
+5. UI updates with the dispensed vouchers displayed in the bold panel
