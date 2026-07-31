@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voucher_manager/core/utils/colors/app_colors.dart';
+import 'package:voucher_manager/presentation/widgets/import_format_dialog.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../core/constants/app_constants.dart';
@@ -121,7 +122,12 @@ class _CompactEmptyState extends StatelessWidget {
                 style: TextStyle(color: onSurface.withOpacity(0.7))),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: notifier.pickAndImportPdf,
+              onPressed: () async {
+                final format = await ImportFormatDialog.show(context);
+                if (format != null) {
+                  await notifier.pickAndImportPdf(format: format);
+                }
+              },
               icon: const Icon(Icons.upload_file, size: 18),
               label: const Text('استيراد PDF'),
             ),
@@ -193,15 +199,18 @@ class _CompactBody extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.copy,
                       size: 18,
-                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                      color: AppColors.darkBackground,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       "نسخ وارسال (Cmd+C)",
-                      style: Theme.of(context).textTheme.bodyLarge,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyLarge
+                          ?.copyWith(color: AppColors.darkBackground),
                     ),
                   ],
                 ),
@@ -215,13 +224,12 @@ class _CompactBody extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ButtonWidget(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary, // أو أي لون أخضر عندك يدل على "تم"
-                  shadow: Theme.of(context).colorScheme.primary,
+                  // استخدام لون الـ Surface أو الـ Disabled Color الخاص بالنظام
+                  color: Theme.of(context).disabledColor.withOpacity(0.12),
+                  shadow: Colors.transparent,
                   name: 'تم ✅ (تم الإرسال)',
                   icons: Icons.check_circle,
-                  textColor: Colors.white,
+                  textColor: Theme.of(context).disabledColor,
                   onPress: state.lastDispensed.isNotEmpty
                       ? notifier.confirmSent
                       : null,

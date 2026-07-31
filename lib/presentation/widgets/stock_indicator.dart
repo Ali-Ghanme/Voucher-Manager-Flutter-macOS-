@@ -38,8 +38,15 @@ class StockIndicator extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Text(
-          '$remaining / $total متبقٍ',
+        const SizedBox(height: 6),
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(text: '$remaining / $total'),
+              const TextSpan(text: ' متبقٍ'),
+            ],
+          ),
+          textDirection: TextDirection.ltr,
           textAlign: TextAlign.center,
           style: theme.textTheme.titleLarge!.copyWith(color: color),
         ),

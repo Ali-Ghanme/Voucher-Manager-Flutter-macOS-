@@ -47,6 +47,11 @@ class _ButtonWidgetState extends State<ButtonWidget> {
         width: widget.width?.w,
         decoration: BoxDecoration(
           borderRadius: const BorderRadius.all(Radius.circular(14)),
+          border: Border.all(
+            color: widget.color == Colors.transparent
+                ? AppColors.mainColor
+                : Colors.transparent,
+          ),
           gradient: LinearGradient(
             colors: [
               widget.color ?? AppColors.mainColor,
@@ -56,26 +61,19 @@ class _ButtonWidgetState extends State<ButtonWidget> {
             end: Alignment.bottomLeft,
           ),
           color: widget.color ?? AppColors.mainColor,
-          border: Border.all(
-            color:
-                widget.color == Colors.transparent
-                    ? AppColors.mainColor
-                    : Colors.transparent,
-          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             widget.name != null && widget.helperWidget == null
                 ? Text(
-                  widget.name!,
-                  style:
-                      widget.textStyle ??
-                      Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: widget.textColor ?? Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                )
+                    widget.name!,
+                    style: widget.textStyle ??
+                        Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: widget.textColor ?? Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                  )
                 : widget.helperWidget ?? const SizedBox.shrink(),
             SizedBox(width: 5.w),
             widget.icons != null

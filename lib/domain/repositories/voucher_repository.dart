@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:voucher_manager/data/models/voucher_format.dart';
+
 import '../../data/models/batch_model.dart';
 import '../../data/models/voucher_model.dart';
 
@@ -16,7 +18,7 @@ abstract class VoucherRepository {
   /// vouchers atomically, and marks the new batch as active
   /// (deactivating any previously active batch). Returns the created
   /// Batch.
-  Future<BatchModel> importPdfBatch(File pdfFile);
+  Future<BatchModel> importPdfBatch(File pdfFile,{required VoucherFormat format});
 
   // ---------------------------------------------------------------------
   // Batches

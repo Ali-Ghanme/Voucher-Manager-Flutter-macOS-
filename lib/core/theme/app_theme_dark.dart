@@ -10,21 +10,7 @@ ThemeData appThemeDark() {
     dividerColor: Colors.transparent,
     iconTheme: const IconThemeData(color: AppColors.darkPrimaryText),
     cardTheme: CardTheme(color: HexColor("#151617")),
-    sliderTheme: SliderThemeData(
-      thumbShape: SliderComponentShape.noThumb,
-      trackShape: const RoundedRectSliderTrackShape(),
-    ),
-    //--------------------- Drop Down Menue Theme ------------------------------
-    dropdownMenuTheme: DropdownMenuThemeData(
-      menuStyle: MenuStyle(
-        backgroundColor: WidgetStatePropertyAll(HexColor("#151617")),
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-        ),
-        shadowColor: const WidgetStatePropertyAll(Colors.transparent),
-      ),
-    ),
-    //------------------------- Snake Bar Theme --------------------------------
+    //------------------------- Snack Bar Theme --------------------------------
     snackBarTheme: SnackBarThemeData(
       contentTextStyle: TextStyle(
         fontFamily: 'Bahij_TheSansArabic',
@@ -33,21 +19,8 @@ ThemeData appThemeDark() {
       ),
       backgroundColor: AppColors.lightSurface,
     ),
-    //------------------------- Drawer Theme -----------------------------------
-    drawerTheme: const DrawerThemeData(
-      backgroundColor: AppColors.darkBackground,
-    ),
-    //------------------------- Search Bar Theme -------------------------------
-    searchBarTheme: SearchBarThemeData(
-      backgroundColor: WidgetStatePropertyAll(HexColor("#393C3F")),
-      shadowColor: const WidgetStatePropertyAll(Colors.transparent),
-    ),
     //------------------------- Dialog Theme -----------------------------------
     dialogTheme: const DialogTheme(backgroundColor: AppColors.darkBackground),
-    //------------------------- Floating Action Button Theme -------------------
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: AppColors.mainColor,
-    ),
     //------------------------- App Bar Theme ----------------------------------
     appBarTheme: AppBarTheme(
       backgroundColor: AppColors.darkBackground,
@@ -61,34 +34,25 @@ ThemeData appThemeDark() {
         fontFamily: 'Bahij_TheSansArabic',
       ),
     ),
-    //------------------------- Bottom Navigation Bar Theme --------------------
-    bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      selectedItemColor: AppColors.mainColor,
-      unselectedItemColor: Colors.grey,
-      selectedLabelStyle: TextStyle(
-        fontSize: 14.sp,
-        fontWeight: FontWeight.normal,
-      ),
-    ),
     //------------------------- ButtonStyle Theme ------------------------------
-    textButtonTheme: TextButtonThemeData(
+    elevatedButtonTheme: ElevatedButtonThemeData(
       style: ButtonStyle(
         textStyle: WidgetStatePropertyAll(
           TextStyle(
             fontSize: 16.sp,
-            color: AppColors.aleart,
+            color: AppColors.darkPrimaryText,
             fontWeight: FontWeight.w700,
             fontFamily: 'Bahij_TheSansArabic',
           ),
         ),
       ),
     ),
-    menuButtonTheme: MenuButtonThemeData(
+    textButtonTheme: TextButtonThemeData(
       style: ButtonStyle(
         textStyle: WidgetStatePropertyAll(
           TextStyle(
             fontSize: 16.sp,
-            color: AppColors.aleart,
+            color: AppColors.darkPrimaryText,
             fontWeight: FontWeight.w700,
             fontFamily: 'Bahij_TheSansArabic',
           ),
@@ -97,17 +61,18 @@ ThemeData appThemeDark() {
     ),
     //------------------------- Text Theme -------------------------------------
     textTheme: _buildTextTheme(AppColors.darkPrimaryText),
-
     //------------------------- Color Schema -----------------------------------
     colorScheme: base.colorScheme.copyWith(
-      surface: AppColors.darkSurface,
-      primary: AppColors.darkPrimaryText,
-      secondary: AppColors.darkBackground,
-      onSurface: AppColors.darkPrimaryText,
-      onPrimary: Colors.white,
-      onSecondary: AppColors.darkBackground,
-      onTertiary: AppColors.darkSurface,
-    ),
+        surface: AppColors.darkSurface,
+        primary: AppColors.darkPrimaryText,
+        secondary: AppColors.darkBackground,
+        onSurface: AppColors.darkPrimaryText,
+        // تجنب وضع Colors.white هنا إذا كان يُستخدم لخلفية الأزرار
+        onPrimary: AppColors.darkSurface,
+        onSecondary: AppColors.darkBackground,
+        onTertiary: AppColors.darkSurface,
+        secondaryContainer: AppColors.warning,
+        onSurfaceVariant: AppColors.darkBackground),
   );
 }
 

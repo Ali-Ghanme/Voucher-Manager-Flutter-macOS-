@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voucher_manager/data/models/voucher_format.dart';
 
 import '../../core/error/exceptions.dart';
 import '../../data/repositories/voucher_repository_impl.dart';
@@ -43,8 +45,9 @@ class VoucherNotifier extends StateNotifier<VoucherState> {
     state = state.copyWith(status: VoucherStatusFlag.loading, clearError: true);
     try {
       final activeBatch = await _repository.getActiveBatch();
-      final availableCount =
-          activeBatch != null ? await _repository.getAvailableCount(activeBatch.id) : 0;
+      final availableCount = activeBatch != null
+          ? await _repository.getAvailableCount(activeBatch.id)
+          : 0;
       final summary = await _repository.getDailySummary();
       final batches = await _repository.getAllBatches();
 
@@ -58,7 +61,8 @@ class VoucherNotifier extends StateNotifier<VoucherState> {
         canUndo: _repositoryImpl.canUndo,
       );
     } catch (e) {
-      state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
+      state = state.copyWith(
+          status: VoucherStatusFlag.error, errorMessage: e.toString());
     }
   }
 
@@ -68,37 +72,47 @@ class VoucherNotifier extends StateNotifier<VoucherState> {
 
   /// Opens a native macOS file picker, then imports the selected PDF.
   /// Returns true on success so the UI can show a success dialog.
-  Future<bool> pickAndImportPdf() async {
+  Future<bool> pickAndImportPdf({required VoucherFormat format}) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
-      dialogTitle: 'اختر ملف PDF يحتوي على بطاقات الفاوتشر',
+      dialogTitle: 'اختر ملف PDF يحتوي على بطاقات الإنترنت',
     );
 
     if (result == null || result.files.single.path == null) {
-      return false; // user cancelled
+      return false;
     }
 
     final file = File(result.files.single.path!);
-    return importPdf(file);
+    return importPdf(file, format: format);
   }
 
-  /// Importable directly with a [File] - useful for testing or
-  /// drag-and-drop support.
-  Future<bool> importPdf(File file) async {
+  Future<bool> importPdf(File file, {required VoucherFormat format}) async {
     state = state.copyWith(status: VoucherStatusFlag.loading, clearError: true);
     try {
-      await _repository.importPdfBatch(file);
+      await _repository.importPdfBatch(file, format: format);
       await refresh();
       return true;
-    } on EmptyPdfException catch (e) {
-      state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
-    } on RegexMismatchException catch (e) {
-      state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
-    } on DatabaseOperationException catch (e) {
-      state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
-    } catch (e) {
-      state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
+    } on EmptyPdfException catch (e, stackTrace) {
+      debugPrint('❌ EmptyPdfException: $e');
+      debugPrint('$stackTrace');
+      state = state.copyWith(
+          status: VoucherStatusFlag.error, errorMessage: e.toString());
+    } on RegexMismatchException catch (e, stackTrace) {
+      debugPrint('❌ RegexMismatchException: $e');
+      debugPrint('$stackTrace');
+      state = state.copyWith(
+          status: VoucherStatusFlag.error, errorMessage: e.toString());
+    } on DatabaseOperationException catch (e, stackTrace) {
+      debugPrint('❌ DatabaseOperationException: $e');
+      debugPrint('$stackTrace');
+      state = state.copyWith(
+          status: VoucherStatusFlag.error, errorMessage: e.toString());
+    } catch (e, stackTrace) {
+      debugPrint('❌ Unexpected import error: $e');
+      debugPrint('$stackTrace');
+      state = state.copyWith(
+          status: VoucherStatusFlag.error, errorMessage: e.toString());
     }
     return false;
   }
@@ -217,10 +231,8 @@ class VoucherNotifier extends StateNotifier<VoucherState> {
     return false;
   }
 
-
-
- // =========================== Confirem =======================================
- /// يُستخدم بعد إرسال البطاقات فعلياً (مثلاً عبر واتساب) لإخفائها من
+  // =========================== Confirem =======================================
+  /// يُستخدم بعد إرسال البطاقات فعلياً (مثلاً عبر واتساب) لإخفائها من
   /// اللوحة فقط، لمنع الالتباس وإرسال نفس البطاقات مرة ثانية بالخطأ.
   /// لا يغيّر أي شيء في قاعدة البيانات - البيع يبقى مسجلاً كما هو.
   void confirmSent() {

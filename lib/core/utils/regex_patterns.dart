@@ -14,15 +14,9 @@
 class RegexPatterns {
   RegexPatterns._();
 
-  /// Matches a standalone 7-digit username, e.g. "7522659".
-  static final RegExp usernamePattern = RegExp(r'\b\d{7}\b');
-
-  /// Matches a standalone 2-3 digit password, e.g. "10", "16", "105".
-  static final RegExp passwordPattern = RegExp(r'\b\d{2,3}\b');
-
   /// Matches ANY run of 2-7 digits - used to tokenize the document so we
   /// can walk through numbers in document order and pair them up.
-  static final RegExp anyNumberToken = RegExp(r'\b\d{2,7}\b');
+  static final RegExp anyNumberToken = RegExp(r'\b\d{1,8}\b');
 }
 
 /// A single (username, password) pair extracted from source text, plus
@@ -34,5 +28,6 @@ class ExtractedPair {
   const ExtractedPair({required this.username, required this.password});
 
   @override
-  String toString() => 'ExtractedPair(username: $username, password: $password)';
+  String toString() =>
+      'ExtractedPair(username: $username, password: $password)';
 }

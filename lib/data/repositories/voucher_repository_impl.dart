@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:uuid/uuid.dart';
+import 'package:voucher_manager/data/models/voucher_format.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/error/exceptions.dart';
@@ -41,8 +42,8 @@ class VoucherRepositoryImpl implements VoucherRepository {
   // =====================================================================
 
   @override
-  Future<BatchModel> importPdfBatch(File pdfFile) async {
-    final pairs = await _pdfParser.extractVouchersFromPdf(pdfFile);
+  Future<BatchModel> importPdfBatch(File pdfFile,{required VoucherFormat format}) async {
+  final pairs = await _pdfParser.extractVouchersFromPdf(pdfFile, format: format);
     // extractVouchersFromPdf already throws EmptyPdfException /
     // RegexMismatchException for the zero-result cases, so by this
     // point `pairs` is guaranteed non-empty.

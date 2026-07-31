@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voucher_manager/core/utils/button_widget.dart';
+import 'package:voucher_manager/presentation/widgets/import_format_dialog.dart';
 import 'package:window_manager/window_manager.dart';
-
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/colors/app_colors.dart';
 import '../providers/repository_providers.dart';
@@ -23,6 +23,13 @@ class MainScreen extends ConsumerStatefulWidget {
 
 class _MainScreenState extends ConsumerState<MainScreen> {
   bool _dialogShownForCompletedBatch = false;
+  Future<void> _importPdf(
+      BuildContext context, VoucherNotifier notifier) async {
+    final format = await ImportFormatDialog.show(context);
+    if (format == null) return; // المستخدم ألغى
+    if (!context.mounted) return;
+    await notifier.pickAndImportPdf(format: format);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +54,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           BatchCompletionDialog.show(
             context,
             batch: next.activeBatch!,
-            onImportNext: () => notifier.pickAndImportPdf(),
+            onImportNext: () => _importPdf(context, notifier),
           );
         });
       } else if (!next.isBatchSoldOut) {
@@ -57,8 +64,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('مدير بطاقات الفاوتشر'),
+        title: const Text('مدير بطاقات الإنترنت'),
         actions: [
+          IconButton(
+            tooltip: 'استيراد ملف PDF',
+            icon: const Icon(Icons.upload_file),
+            onPressed: () => _importPdf(context, notifier),
+          ),
           IconButton(
             tooltip: 'تحديث',
             icon: const Icon(Icons.refresh),
@@ -84,7 +96,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                     _DailySummaryCard(state: state),
                     const SizedBox(height: 20),
                     if (!state.hasActiveBatch)
-                      _NoActiveBatchCard(onImport: notifier.pickAndImportPdf)
+                      _NoActiveBatchCard(
+                          onImport: () => _importPdf(context, notifier))
                     else
                       _ActiveBatchSection(state: state, notifier: notifier),
                     const SizedBox(height: 20),
@@ -163,25 +176,20 @@ class _StatBlock extends StatelessWidget {
 }
 
 class _NoActiveBatchCard extends StatelessWidget {
-  final VoidCallback onImport;
+  final Future<void> Function() onImport;
   const _NoActiveBatchCard({required this.onImport});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           children: [
-            Icon(Icons.inbox_outlined,
-                size: 56, color: onSurface.withOpacity(0.38)),
+            const Icon(Icons.inbox_outlined, size: 56, color: Colors.white38),
             const SizedBox(height: 16),
-            Text('لا توجد دفعة نشطة حالياً',
-                style:
-                    TextStyle(fontSize: 16, color: onSurface.withOpacity(0.7))),
+            const Text('لا توجد دفعة نشطة حالياً',
+                style: TextStyle(fontSize: 16, color: Colors.white70)),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: onImport,
