@@ -10,6 +10,7 @@ import '../providers/repository_providers.dart';
 import '../providers/voucher_notifier.dart';
 import '../providers/voucher_state.dart';
 import '../widgets/custom_quantity_dialog.dart';
+import '../widgets/qr_code_dialog.dart';
 import '../widgets/quick_action_chips.dart';
 import '../widgets/stock_indicator.dart';
 import '../widgets/voucher_display_panel.dart';
@@ -165,48 +166,56 @@ class _CompactBody extends StatelessWidget {
             },
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: InkWell(
-              onTap: state.lastClipboardMessage != null
-                  ? () async {
-                      await Clipboard.setData(
-                        ClipboardData(text: state.lastClipboardMessage!),
-                      );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(" تم النسخ"),
-                            duration: Duration(seconds: 1),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    }
-                  : null,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.copy,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.onSecondaryContainer,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "نسخ وارسال (Cmd+C)",
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ],
+          Row(
+            children: [
+              // ── Copy button (matches main screen ButtonWidget style) ──
+              Expanded(
+                child: ButtonWidget(
+                  color: AppColors.warning,
+                  shadow: AppColors.warning,
+                  name: 'نسخ (Cmd+C)',
+                  icons: Icons.copy,
+                  iconColor: Colors.black,
+                  textColor: Colors.black,
+                  onPress: state.lastClipboardMessage != null
+                      ? () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: state.lastClipboardMessage!),
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('تم النسخ'),
+                                duration: Duration(seconds: 1),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        }
+                      : null,
                 ),
               ),
-            ),
+
+              // ── QR Code button ────────────────────────────────
+              Tooltip(
+                message: 'عرض QR Code للإرسال عبر SMS',
+                child: ButtonWidget(
+                  color: state.lastDispensed.isNotEmpty
+                      ? AppColors.mainColor
+                      : AppColors.grayDark,
+                  shadow: state.lastDispensed.isNotEmpty
+                      ? AppColors.mainColor
+                      : AppColors.grayDark,
+                  icons: Icons.qr_code_2_rounded,
+                  onPress: state.lastDispensed.isNotEmpty
+                      ? () => QrCodeDialog.show(
+                            context,
+                            vouchers: state.lastDispensed,
+                          )
+                      : null,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Column(
@@ -215,10 +224,8 @@ class _CompactBody extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ButtonWidget(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary, // أو أي لون أخضر عندك يدل على "تم"
-                  shadow: Theme.of(context).colorScheme.primary,
+                  color: AppColors.mainColor,
+                  shadow: AppColors.mainColor,
                   name: 'تم ✅ (تم الإرسال)',
                   icons: Icons.check_circle,
                   textColor: Colors.white,

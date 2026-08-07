@@ -10,6 +10,7 @@ import '../providers/voucher_notifier.dart';
 import '../providers/voucher_state.dart';
 import '../widgets/batch_completion_dialog.dart';
 import '../widgets/custom_quantity_dialog.dart';
+import '../widgets/qr_code_dialog.dart';
 import '../widgets/quick_action_chips.dart';
 import '../widgets/stock_indicator.dart';
 import '../widgets/voucher_display_panel.dart';
@@ -232,7 +233,29 @@ class _ActiveBatchSection extends StatelessWidget {
                 total: batch.totalVouchers, sold: batch.soldVouchers),
             const SizedBox(height: 20),
             VoucherDisplayPanel(vouchers: state.lastDispensed),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+            // ── QR Code button ─────────────────────────────────
+            Tooltip(
+              message: 'عرض QR Code لمسح الكروت وإرسالها عبر SMS',
+              child: ButtonWidget(
+                color: state.lastDispensed.isNotEmpty
+                    ? AppColors.mainColor
+                    : AppColors.grayDark,
+                shadow: state.lastDispensed.isNotEmpty
+                    ? AppColors.mainColor
+                    : AppColors.grayDark,
+                name: 'عرض QR Code للإرسال عبر SMS',
+                icons: Icons.qr_code_2_rounded,
+                textColor: Colors.white,
+                onPress: state.lastDispensed.isNotEmpty
+                    ? () => QrCodeDialog.show(
+                          context,
+                          vouchers: state.lastDispensed,
+                        )
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 8),
             QuickActionChips(
               maxAvailable: state.availableCount,
               onSelect: (n) => notifier.dispense(n),

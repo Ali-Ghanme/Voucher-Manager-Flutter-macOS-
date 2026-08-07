@@ -100,12 +100,12 @@ ThemeData appThemeDark() {
 
     //------------------------- Color Schema -----------------------------------
     colorScheme: base.colorScheme.copyWith(
-      surface: AppColors.darkSurface,
+      surface: AppColors.darkBackground,
       primary: AppColors.darkPrimaryText,
       secondary: AppColors.darkBackground,
       onSurface: AppColors.darkPrimaryText,
       onPrimary: Colors.white,
-      onSecondary: AppColors.darkBackground,
+      onSecondary: AppColors.darkSurface,
       onTertiary: AppColors.darkSurface,
     ),
   );
