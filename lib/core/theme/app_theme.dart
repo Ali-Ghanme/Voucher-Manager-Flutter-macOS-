@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:voucher_manager/core/utils/colors/app_colors.dart';
-import 'package:voucher_manager/core/utils/colors/hex_color.dart';
 
 ThemeData appThemeLight() {
   final base = ThemeData.light(useMaterial3: false);
