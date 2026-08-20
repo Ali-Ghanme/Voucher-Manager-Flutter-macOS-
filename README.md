@@ -25,6 +25,10 @@ files, then sold one card (or many) at a time — either copied to the
 clipboard for a WhatsApp message, or displayed in large, high-contrast
 text in a compact always-on-top window for reading off a phone's SMS app.
 
+New in this release:
+
+- 📱 **SMS-optimized QR codes** — generate QR codes for voucher username/password pairs so customers can quickly scan to redeem; works alongside the compact display and clipboard message flow. A QrCode dialog is provided to preview, save, or copy the QR for each dispensed voucher.
+
 The core design goal is **data integrity**: every sale is an atomic
 database transaction, so a voucher can never be sold twice, even under
 rapid consecutive sales.
@@ -41,6 +45,7 @@ rapid consecutive sales.
 - 🔒 **Atomic, transaction-safe sales** — SQLite transactions guarantee no voucher is ever sold twice, even with rapid clicks
 - 📋 **Instant clipboard copy** — a ready-to-send Arabic message is generated and copied automatically for WhatsApp
 - 🪟 **Compact always-on-top window** — large, high-contrast, tap-to-copy username/password display for manually retyping into SMS apps
+- 📱 **SMS-optimized QR code generation** — generate and show a QR code for each voucher (QrCodeDialog) so customers can scan the code instead of retyping credentials
 - ↩️ **Undo / refund** — revert the last sale within a configurable time window
 - 🚫 **Void damaged cards** — mark individual vouchers as unusable without affecting stock accuracy
 - 📊 **Daily summary dashboard** — sales today, completed batches, active stock, at a glance
@@ -137,7 +142,7 @@ without touching a single widget or provider.
 
 ---
 
-## 🔐 How Double-Selling Is Prevented
+## ���� How Double-Selling Is Prevented
 
 Every state-mutating operation — **import**, **dispense**, **undo**,
 **void**, **reset**, **delete** — runs inside a single
@@ -177,6 +182,7 @@ against importing duplicate cards from a PDF with repeated entries.
 | Reset / delete a batch | `resetBatch()` / `deleteBatch()` |
 | Batch completion dialog | `presentation/widgets/batch_completion_dialog.dart` |
 | Daily summary dashboard | `getDailySummary()` + `_DailySummaryCard` |
+| QR code dialog (SMS-optimized) | `presentation/widgets/qr_code_dialog.dart` — uses `qr_flutter` |
 
 ---
 
@@ -203,6 +209,7 @@ against importing duplicate cards from a PDF with repeated entries.
 | PDF parsing | [`syncfusion_flutter_pdf`](https://pub.dev/packages/syncfusion_flutter_pdf) |
 | File selection | [`file_picker`](https://pub.dev/packages/file_picker) |
 | App icon generation | [`flutter_launcher_icons`](https://pub.dev/packages/flutter_launcher_icons) |
+| QR code generation | [`qr_flutter`](https://pub.dev/packages/qr_flutter) |
 
 ---
 
@@ -239,8 +246,12 @@ This project is licensed under the [MIT License](LICENSE).
 أو عرضها بخط كبير وواضح في نافذة عائمة مصغّرة تبقى دائماً في المقدمة،
 لتسهيل كتابتها يدوياً في تطبيق الرسائل (SMS).
 
+الجديد في هذا الإصدار:
+
+- 📱 **إنشاء رموز QR مُحسّنة للرسائل (SMS)** — إمكانية توليد رمز QR لكل بطاقة (اسم مستخدم/كلمة مرور) ليقوم الزبون بمسحه سريعاً بدل إعادة كتابة البيانات. تتوافر نافذة حوار `QrCodeDialog` لمعاينة الرمز، حفظه، أو نسخه.
+
 الهدف الأساسي من التصميم هو **حماية البيانات من الأخطاء**: كل عملية بيع
-هي عملية قاعدة بيانات ذرية (atomic transaction)، بحيث يستحيل بيع نفس
+هي عم��ية قاعدة بيانات ذرية (atomic transaction)، بحيث يستحيل بيع نفس
 البطاقة مرتين، حتى مع الضغط السريع المتكرر.
 
 ### أبرز الميزات
@@ -250,11 +261,12 @@ This project is licensed under the [MIT License](LICENSE).
 - 🔒 عمليات بيع آمنة تماماً من التكرار (atomic transactions)
 - 📋 نسخ تلقائي لرسالة جاهزة للإرسال عبر واتساب
 - 🪟 نافذة عائمة مصغّرة دائمة الظهور، بخط كبير وواضح، مع نسخ بلمسة واحدة
+- 📱 إنشاء رموز QR مُحسّنة للرسائل (SMS) — توليد وعرض رمز QR لكل بطاقة (نافذة `QrCodeDialog`) لتمكين المسح السريع
 - ↩️ إمكانية التراجع عن آخر عملية بيع خلال مدة زمنية محددة
 - 🚫 تعليم البطاقات التالفة كـ "مبطلة"
 - 📊 لوحة ملخص يومي: المبيعات، الدفعات المكتملة، المخزون النشط
 - 🔁 إعادة ضبط أو حذف أي دفعة بالكامل
-- 🎉 عرض تلقائي لمدة بيع كل دفعة عند اكتمالها بالكامل
+- 🎉 عرض تلقائي لمدة بيع كل دفعة عند اكتمالها بالكام��
 
 ### التشغيل
 
@@ -268,4 +280,4 @@ flutter run -d macos
 
 لمزيد من التفاصيل حول البنية المعمارية، ومنع تكرار البيع، وحالات الاستثناء
 التي يتعامل معها التطبيق، راجع الأقسام الإنجليزية أعلاه — الكود والتعليقات
-داخل المشروع موثّقة بالإنجليزية لتسهيل المساهمة من مطورين آخرين.
+داخل المشروع موّثقة بالإنجليزية لتسهيل المساهمة من مطورين آخرين.
