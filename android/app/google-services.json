@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "951281683633",
+    "project_id": "tas3eera-alerts-33482",
+    "storage_bucket": "tas3eera-alerts-33482.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:951281683633:android:e8f892d3fd4d2d6f4fa690",
+        "android_client_info": {
+          "package_name": "com.tas3eera.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpqkXqBRr4T7LCQNjkbfcgIZ-DOVropYI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
