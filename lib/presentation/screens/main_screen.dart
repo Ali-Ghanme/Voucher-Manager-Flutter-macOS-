@@ -10,6 +10,7 @@ import '../providers/voucher_notifier.dart';
 import '../providers/voucher_state.dart';
 import '../widgets/batch_completion_dialog.dart';
 import '../widgets/custom_quantity_dialog.dart';
+import '../widgets/import_format_dialog.dart';
 import '../widgets/qr_code_dialog.dart';
 import '../widgets/quick_action_chips.dart';
 import '../widgets/stock_indicator.dart';
@@ -24,6 +25,14 @@ class MainScreen extends ConsumerStatefulWidget {
 
 class _MainScreenState extends ConsumerState<MainScreen> {
   bool _dialogShownForCompletedBatch = false;
+
+  /// يفتح أولاً حوار تخصيص الدفعة، ثم يفتح نافذة اختيار الملف.
+  Future<void> _importPdf(BuildContext context, VoucherNotifier notifier) async {
+    final format = await ImportFormatDialog.show(context);
+    if (format == null) return; // المستخدم ألغى
+    if (!context.mounted) return;
+    await notifier.pickAndImportPdf(format: format);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +57,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           BatchCompletionDialog.show(
             context,
             batch: next.activeBatch!,
-            onImportNext: () => notifier.pickAndImportPdf(),
+            onImportNext: () => _importPdf(context, notifier),
           );
         });
       } else if (!next.isBatchSoldOut) {
@@ -60,6 +69,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       appBar: AppBar(
         title: const Text('مدير بطاقات الفاوتشر'),
         actions: [
+          IconButton(
+            tooltip: 'استيراد ملف PDF',
+            icon: const Icon(Icons.upload_file),
+            onPressed: () => _importPdf(context, notifier),
+          ),
           IconButton(
             tooltip: 'تحديث',
             icon: const Icon(Icons.refresh),
@@ -85,7 +99,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                     _DailySummaryCard(state: state),
                     const SizedBox(height: 20),
                     if (!state.hasActiveBatch)
-                      _NoActiveBatchCard(onImport: notifier.pickAndImportPdf)
+                      _NoActiveBatchCard(
+                          onImport: () => _importPdf(context, notifier))
                     else
                       _ActiveBatchSection(state: state, notifier: notifier),
                     const SizedBox(height: 20),

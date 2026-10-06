@@ -3,25 +3,29 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../data/models/voucher_model.dart';
 
-/// Builds a compact, all-Latin SMS payload for a list of dispensed vouchers.
+/// Builds a clear, readable text payload for a list of dispensed vouchers.
+/// Uses standard ASCII (User / Pass) so that hardware QR scanners, keyboard emulators,
+/// and mobile apps parse the text without encoding issues (????).
 ///
 /// Format examples:
-///   • 1 voucher  → `U:887943 P:5`                                  (13 chars)
-///   • 3 vouchers → `1)U:887943 P:5 2)U:884171 P:7 3)U:123456 P:9`
-///
-/// Using only ASCII keeps the SMS in GSM 7-bit mode, raising the per-message
-/// limit from 70 (Unicode/Arabic) to 160 characters – halving cost.
+///   • 1 voucher  →
+///       User: 887943
+///       Pass: 5
+///   • Multiple vouchers →
+///       1. User: 887943 | Pass: 5
+///       2. User: 884171 | Pass: 7
 String buildCompactSmsText(List<Voucher> vouchers) {
   if (vouchers.isEmpty) return '';
   if (vouchers.length == 1) {
     final v = vouchers.first;
-    return 'U:${v.username} P:${v.password}';
+    return 'User: ${v.username}\nPass: ${v.password}';
   }
   return vouchers
       .asMap()
       .entries
-      .map((e) => '${e.key + 1})U:${e.value.username} P:${e.value.password}')
-      .join(' ');
+      .map((e) =>
+          '${e.key + 1}. User: ${e.value.username} | Pass: ${e.value.password}')
+      .join('\n');
 }
 
 /// Computes SMS segment statistics for [text].

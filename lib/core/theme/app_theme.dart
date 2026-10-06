@@ -92,6 +92,7 @@ ThemeData appThemeLight() {
       style: ButtonStyle(
         textStyle: WidgetStatePropertyAll(
           TextStyle(
+            inherit: false,
             fontSize: 16.sp,
             color: AppColors.darkPrimaryText,
             fontWeight: FontWeight.w700,

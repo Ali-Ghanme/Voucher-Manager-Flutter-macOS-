@@ -1,4 +1,4 @@
-package com.tas3eera.app
+package com.example.vouchermanager
 
 import io.flutter.embedding.android.FlutterActivity
 

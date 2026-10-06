@@ -1,30 +1,16 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:voucher_manager/core/utils/regex_patterns.dart';
 
 import '../../core/error/exceptions.dart';
-import '../../core/utils/regex_patterns.dart';
+import '../models/voucher_format.dart';
 
-/// Extracts (username, password) voucher pairs from a PDF file's raw
-/// text content.
-///
-/// Strategy:
-/// 1. Extract full text from every page via Syncfusion's PDF text
-///    extractor (works for both single- and multi-page voucher sheets).
-/// 2. Tokenize the text into all numeric runs of 2-7 digits, preserving
-///    document order (this is layout-agnostic - it doesn't matter if
-///    the PDF uses a table, a grid, or plain lines).
-/// 3. Walk the tokens; whenever a 7-digit token (username) is found,
-///    look at the *next* token - if it is 2-3 digits, pair them as one
-///    voucher. This naturally skips over page numbers, headers, dates,
-///    etc. that don't fit the username/password adjacency pattern.
 class PdfParserService {
-  /// Parses [file] and returns the list of extracted username/password
-  /// pairs, in the order they appear in the document.
-  ///
-  /// Throws [EmptyPdfException] if no text could be extracted at all.
-  /// Throws [RegexMismatchException] if text was extracted but no valid
-  /// username/password pairs could be formed.
-  Future<List<ExtractedPair>> extractVouchersFromPdf(File file) async {
+  Future<List<ExtractedPair>> extractVouchersFromPdf(
+    File file, {
+    required VoucherFormat format,
+  }) async {
     final Uint8ListLike bytes = await file.readAsBytes();
     final PdfDocument document = PdfDocument(inputBytes: bytes);
 
@@ -36,51 +22,77 @@ class PdfParserService {
       document.dispose();
     }
 
+    debugPrint('📄 [PDF] طول النص المستخرج: ${fullText.length} حرف');
+
     if (fullText.trim().isEmpty) {
+      debugPrint('❌ [PDF] الملف فارغ أو لا يحتوي على نص');
       throw const EmptyPdfException();
     }
 
-    final List<ExtractedPair> pairs = _extractPairsFromText(fullText);
+    final List<ExtractedPair> pairs = _extractPairsFromText(fullText, format);
+    debugPrint('🔢 [PDF] عدد الأزواج المستخرجة: ${pairs.length}');
 
     if (pairs.isEmpty) {
+      debugPrint('❌ [PDF] لم يتم العثور على أي زوج يطابق الصيغة المطلوبة');
       throw const RegexMismatchException();
     }
 
     return pairs;
   }
 
-  /// Core tokenizing/pairing algorithm, split out for unit testability
-  /// without needing an actual PDF file.
-  List<ExtractedPair> _extractPairsFromText(String text) {
-    final List<String> tokens =
-        RegexPatterns.anyNumberToken.allMatches(text).map((m) => m.group(0)!).toList();
-
+  List<ExtractedPair> _extractPairsFromText(String text, VoucherFormat format) {
     final List<ExtractedPair> results = [];
     final Set<String> seenKeys = {};
 
-    int i = 0;
-    while (i < tokens.length) {
-      final String current = tokens[i];
-      final bool isUsername = current.length == 7;
+    // 1. تنظيف النص المرجعي وإزالة العبارات والرموز غير الرقمية
+    final String cleanText = text
+        .replaceAll(
+            RegExp(
+                r'Fast\s*Net|FastNet|شيكل|ساعات|3M|نتمنى لكم أوقات ممتعة|تتمنى لكم أوقات ممتعة|لتمنى لكم أوقات ممتعة',
+                caseSensitive: false),
+            ' ')
+        .replaceAll(
+            RegExp(r'[^\d]'), ''); // إزالة كل شيء والاستبقاء على الأرقام فقط
 
-      if (isUsername && i + 1 < tokens.length) {
-        final String next = tokens[i + 1];
-        final bool nextIsPassword = next.length == 2 || next.length == 3;
+    debugPrint(
+        '📄 [PDF Raw Digits] طول سلسلة الأرقام الإجمالية: ${cleanText.length}');
 
-        if (nextIsPassword) {
-          final key = '$current|$next';
-          // Guard against the exact same pair appearing twice due to
-          // duplicated PDF text layers (common with some generators).
-          if (seenKeys.add(key)) {
-            results.add(ExtractedPair(username: current, password: next));
-          }
-          i += 2; // consume both tokens
-          continue;
-        }
+    // 2. مطابقة عامة: أي 6 أرقام (اسم مستخدم) متبوعة بـ 4 أرقام (كلمة مرور)
+    // هذا يدعم البادئات (70 و 42 وأي بادئة مستقبليّة)
+    final RegExp generalVoucherRegex = RegExp(r'(\d{6})(\d{4})');
+
+    final matches = generalVoucherRegex.allMatches(cleanText);
+
+    for (final match in matches) {
+      final String username = match.group(1)!;
+      final String password = match.group(2)!;
+
+      final key = '$username|$password';
+      if (seenKeys.add(key)) {
+        results.add(ExtractedPair(username: username, password: password));
       }
-      i += 1;
     }
 
+    // 3. Fallback: التجميع المتتابع على مستوى الخانات الفردية إذا تطلب الأمر
+    if (results.isEmpty) {
+      final List<String> digits = cleanText.split('');
+      int i = 0;
+
+      while (i <= digits.length - 10) {
+        final username = digits.sublist(i, i + 6).join('');
+        final password = digits.sublist(i + 6, i + 10).join('');
+
+        final key = '$username|$password';
+        if (seenKeys.add(key)) {
+          results.add(ExtractedPair(username: username, password: password));
+          i += 10; // القفز للبطاقة التالية
+          continue;
+        }
+        i++;
+      }
+    }
+
+    debugPrint('🔢 [PDF] نجاح استخراج ${results.length} كرت بنجاح.');
     return results;
   }
 }

@@ -1,10 +1,12 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/error/exceptions.dart';
+import '../../data/models/voucher_format.dart';
 import '../../data/repositories/voucher_repository_impl.dart';
 import '../../domain/repositories/voucher_repository.dart';
 import 'repository_providers.dart';
@@ -68,7 +70,7 @@ class VoucherNotifier extends StateNotifier<VoucherState> {
 
   /// Opens a native macOS file picker, then imports the selected PDF.
   /// Returns true on success so the UI can show a success dialog.
-  Future<bool> pickAndImportPdf() async {
+  Future<bool> pickAndImportPdf({required VoucherFormat format}) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
@@ -80,24 +82,35 @@ class VoucherNotifier extends StateNotifier<VoucherState> {
     }
 
     final file = File(result.files.single.path!);
-    return importPdf(file);
+    return importPdf(file, format: format);
   }
 
   /// Importable directly with a [File] - useful for testing or
   /// drag-and-drop support.
-  Future<bool> importPdf(File file) async {
+  Future<bool> importPdf(File file, {required VoucherFormat format}) async {
     state = state.copyWith(status: VoucherStatusFlag.loading, clearError: true);
+    debugPrint('📥 [Import] بدء استيراد: ${file.path}');
+    debugPrint('⚙️ [Import] الصيغة: username=${format.usernameLength} خانة, password=${format.passwordMinLength}-${format.passwordMaxLength} خانة');
     try {
-      await _repository.importPdfBatch(file);
+      await _repository.importPdfBatch(file, format: format);
       await refresh();
+      debugPrint('✅ [Import] تم الاستيراد بنجاح');
       return true;
-    } on EmptyPdfException catch (e) {
+    } on EmptyPdfException catch (e, st) {
+      debugPrint('❌ [Import] EmptyPdfException: $e');
+      debugPrint('❌ Stack: $st');
       state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
-    } on RegexMismatchException catch (e) {
+    } on RegexMismatchException catch (e, st) {
+      debugPrint('❌ [Import] RegexMismatchException: $e');
+      debugPrint('❌ Stack: $st');
       state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
-    } on DatabaseOperationException catch (e) {
+    } on DatabaseOperationException catch (e, st) {
+      debugPrint('❌ [Import] DatabaseOperationException: $e');
+      debugPrint('❌ Stack: $st');
       state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('❌ [Import] خطأ غير متوقع: $e');
+      debugPrint('❌ Stack: $st');
       state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
     }
     return false;

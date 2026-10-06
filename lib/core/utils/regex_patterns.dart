@@ -20,9 +20,10 @@ class RegexPatterns {
   /// Matches a standalone 2-3 digit password, e.g. "10", "16", "105".
   static final RegExp passwordPattern = RegExp(r'\b\d{2,3}\b');
 
-  /// Matches ANY run of 2-7 digits - used to tokenize the document so we
+  /// Matches ANY run of 1-7 digits - used to tokenize the document so we
   /// can walk through numbers in document order and pair them up.
-  static final RegExp anyNumberToken = RegExp(r'\b\d{2,7}\b');
+  /// Range starts at 1 to support single-digit passwords (compact format).
+  static final RegExp anyNumberToken = RegExp(r'\b\d{1,7}\b');
 }
 
 /// A single (username, password) pair extracted from source text, plus

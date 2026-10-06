@@ -8,6 +8,7 @@ import '../../core/error/exceptions.dart';
 import '../../domain/repositories/voucher_repository.dart';
 import '../datasources/database_helper.dart';
 import '../models/batch_model.dart';
+import '../models/voucher_format.dart';
 import '../models/voucher_model.dart';
 import '../services/pdf_parser_service.dart';
 
@@ -41,8 +42,8 @@ class VoucherRepositoryImpl implements VoucherRepository {
   // =====================================================================
 
   @override
-  Future<BatchModel> importPdfBatch(File pdfFile) async {
-    final pairs = await _pdfParser.extractVouchersFromPdf(pdfFile);
+  Future<BatchModel> importPdfBatch(File pdfFile, {required VoucherFormat format}) async {
+    final pairs = await _pdfParser.extractVouchersFromPdf(pdfFile, format: format);
     // extractVouchersFromPdf already throws EmptyPdfException /
     // RegexMismatchException for the zero-result cases, so by this
     // point `pairs` is guaranteed non-empty.

@@ -17,7 +17,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.tas3eera.app"
+    namespace = "com.example.vouchermanager"
     compileSdk = 35
     ndkVersion = "27.0.12077973"
 
@@ -32,7 +32,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.tas3eera.app"
+        applicationId = "com.example.vouchermanager"
         minSdk = 23
         targetSdk = 34
         versionCode = 1

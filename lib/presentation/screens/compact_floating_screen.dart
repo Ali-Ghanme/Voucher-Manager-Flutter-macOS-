@@ -10,6 +10,7 @@ import '../providers/repository_providers.dart';
 import '../providers/voucher_notifier.dart';
 import '../providers/voucher_state.dart';
 import '../widgets/custom_quantity_dialog.dart';
+import '../widgets/import_format_dialog.dart';
 import '../widgets/qr_code_dialog.dart';
 import '../widgets/quick_action_chips.dart';
 import '../widgets/stock_indicator.dart';
@@ -104,6 +105,13 @@ class _CompactEmptyState extends StatelessWidget {
   final VoucherNotifier notifier;
   const _CompactEmptyState({required this.notifier});
 
+  Future<void> _importPdf(BuildContext context) async {
+    final format = await ImportFormatDialog.show(context);
+    if (format == null) return;
+    if (!context.mounted) return;
+    await notifier.pickAndImportPdf(format: format);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -122,7 +130,7 @@ class _CompactEmptyState extends StatelessWidget {
                 style: TextStyle(color: onSurface.withOpacity(0.7))),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: notifier.pickAndImportPdf,
+              onPressed: () => _importPdf(context),
               icon: const Icon(Icons.upload_file, size: 18),
               label: const Text('استيراد PDF'),
             ),
