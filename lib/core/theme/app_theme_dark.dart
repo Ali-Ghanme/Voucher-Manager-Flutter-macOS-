@@ -71,10 +71,24 @@ ThemeData appThemeDark() {
       ),
     ),
     //------------------------- ButtonStyle Theme ------------------------------
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ButtonStyle(
+        textStyle: WidgetStatePropertyAll(
+          TextStyle(
+            inherit: false,
+            fontSize: 16.sp,
+            color: AppColors.darkPrimaryText,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'Bahij_TheSansArabic',
+          ),
+        ),
+      ),
+    ),
     textButtonTheme: TextButtonThemeData(
       style: ButtonStyle(
         textStyle: WidgetStatePropertyAll(
           TextStyle(
+            inherit: false,
             fontSize: 16.sp,
             color: AppColors.aleart,
             fontWeight: FontWeight.w700,
@@ -87,6 +101,7 @@ ThemeData appThemeDark() {
       style: ButtonStyle(
         textStyle: WidgetStatePropertyAll(
           TextStyle(
+            inherit: false,
             fontSize: 16.sp,
             color: AppColors.aleart,
             fontWeight: FontWeight.w700,

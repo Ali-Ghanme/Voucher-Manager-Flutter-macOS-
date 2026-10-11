@@ -28,6 +28,8 @@ class BatchModel extends Equatable {
 
   bool get isSoldOut => soldVouchers >= totalVouchers && totalVouchers > 0;
 
+  bool get isCompleted => completedAt != null || isSoldOut;
+
   double get progress => totalVouchers == 0 ? 0 : soldVouchers / totalVouchers;
 
   BatchModel copyWith({

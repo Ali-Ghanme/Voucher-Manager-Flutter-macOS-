@@ -45,8 +45,9 @@ class VoucherNotifier extends StateNotifier<VoucherState> {
     state = state.copyWith(status: VoucherStatusFlag.loading, clearError: true);
     try {
       final activeBatch = await _repository.getActiveBatch();
-      final availableCount =
-          activeBatch != null ? await _repository.getAvailableCount(activeBatch.id) : 0;
+      final availableCount = activeBatch != null
+          ? await _repository.getAvailableCount(activeBatch.id)
+          : 0;
       final summary = await _repository.getDailySummary();
       final batches = await _repository.getAllBatches();
 
@@ -60,7 +61,8 @@ class VoucherNotifier extends StateNotifier<VoucherState> {
         canUndo: _repositoryImpl.canUndo,
       );
     } catch (e) {
-      state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
+      state = state.copyWith(
+          status: VoucherStatusFlag.error, errorMessage: e.toString());
     }
   }
 
@@ -90,7 +92,8 @@ class VoucherNotifier extends StateNotifier<VoucherState> {
   Future<bool> importPdf(File file, {required VoucherFormat format}) async {
     state = state.copyWith(status: VoucherStatusFlag.loading, clearError: true);
     debugPrint('📥 [Import] بدء استيراد: ${file.path}');
-    debugPrint('⚙️ [Import] الصيغة: username=${format.usernameLength} خانة, password=${format.passwordMinLength}-${format.passwordMaxLength} خانة');
+    debugPrint(
+        '⚙️ [Import] الصيغة: username=${format.usernameLength} خانة, password=${format.passwordMinLength}-${format.passwordMaxLength} خانة');
     try {
       await _repository.importPdfBatch(file, format: format);
       await refresh();
@@ -99,19 +102,23 @@ class VoucherNotifier extends StateNotifier<VoucherState> {
     } on EmptyPdfException catch (e, st) {
       debugPrint('❌ [Import] EmptyPdfException: $e');
       debugPrint('❌ Stack: $st');
-      state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
+      state = state.copyWith(
+          status: VoucherStatusFlag.error, errorMessage: e.toString());
     } on RegexMismatchException catch (e, st) {
       debugPrint('❌ [Import] RegexMismatchException: $e');
       debugPrint('❌ Stack: $st');
-      state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
+      state = state.copyWith(
+          status: VoucherStatusFlag.error, errorMessage: e.toString());
     } on DatabaseOperationException catch (e, st) {
       debugPrint('❌ [Import] DatabaseOperationException: $e');
       debugPrint('❌ Stack: $st');
-      state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
+      state = state.copyWith(
+          status: VoucherStatusFlag.error, errorMessage: e.toString());
     } catch (e, st) {
       debugPrint('❌ [Import] خطأ غير متوقع: $e');
       debugPrint('❌ Stack: $st');
-      state = state.copyWith(status: VoucherStatusFlag.error, errorMessage: e.toString());
+      state = state.copyWith(
+          status: VoucherStatusFlag.error, errorMessage: e.toString());
     }
     return false;
   }
@@ -230,10 +237,34 @@ class VoucherNotifier extends StateNotifier<VoucherState> {
     return false;
   }
 
+  // -------------------------------------------------------------------------
+  // Sync Offset
+  // -------------------------------------------------------------------------
 
+  /// يُحوّل البطاقات من 1 حتى [offsetIndex]-1 إلى SOLD ويُحدّث المؤشر فوراً.
+  /// يُعيد عدد البطاقات المعدَّلة، أو -1 عند الخطأ.
+  Future<int> syncOffset({
+    required String batchId,
+    required int offsetIndex,
+  }) async {
+    state = state.copyWith(clearError: true);
+    try {
+      final updated = await _repository.syncOffset(
+        batchId: batchId,
+        offsetIndex: offsetIndex,
+      );
+      await refresh();
+      return updated;
+    } on DatabaseOperationException catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+    }
+    return -1;
+  }
 
- // =========================== Confirem =======================================
- /// يُستخدم بعد إرسال البطاقات فعلياً (مثلاً عبر واتساب) لإخفائها من
+  // =========================== Confirem =======================================
+  /// يُستخدم بعد إرسال البطاقات فعلياً (مثلاً عبر واتساب) لإخفائها من
   /// اللوحة فقط، لمنع الالتباس وإرسال نفس البطاقات مرة ثانية بالخطأ.
   /// لا يغيّر أي شيء في قاعدة البيانات - البيع يبقى مسجلاً كما هو.
   void confirmSent() {

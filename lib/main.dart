@@ -41,17 +41,14 @@ class VoucherManagerApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isCompact = ref.watch(isCompactModeProvider);
-
-    // Determine design size based on platform
     final isDesktop =
         Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+    final isCompact = isDesktop ? ref.watch(isCompactModeProvider) : false;
+
+    // Determine design size based on platform
     final Size designSize = isDesktop
-        ? (AppConstants.compactWindowHeight > AppConstants.compactWindowWidth
-            ? const Size(AppConstants.compactWindowHeight,
-                AppConstants.compactWindowWidth)
-            : const Size(AppConstants.compactWindowWidth,
-                AppConstants.compactWindowHeight))
+        ? const Size(
+            AppConstants.normalWindowWidth, AppConstants.normalWindowHeight)
         : const Size(390, 844); // Standard mobile baseline
 
     return ScreenUtilInit(
@@ -70,11 +67,9 @@ class VoucherManagerApp extends ConsumerWidget {
             textDirection: TextDirection.rtl,
             child: child!,
           ),
-          home: (!isDesktop)
-              ? const MainScreen()
-              : (isCompact
-                  ? const CompactFloatingScreen()
-                  : const MainScreen()),
+          home: isDesktop
+              ? (isCompact ? const CompactFloatingScreen() : const MainScreen())
+              : const MainScreen(),
         );
       },
     );

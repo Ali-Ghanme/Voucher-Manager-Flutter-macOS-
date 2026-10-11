@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../data/models/voucher_model.dart';
 
@@ -33,7 +34,8 @@ class VoucherDisplayPanel extends StatelessWidget {
       );
     }
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      constraints: BoxConstraints(maxHeight: 180.h),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
@@ -42,7 +44,7 @@ class VoucherDisplayPanel extends StatelessWidget {
       ),
       child: ListView.separated(
         shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
+        physics: const BouncingScrollPhysics(),
         itemCount: vouchers.length,
         separatorBuilder: (_, __) =>
             Divider(color: onSurface.withOpacity(0.12), height: 28),

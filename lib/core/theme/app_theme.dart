@@ -70,6 +70,7 @@ ThemeData appThemeLight() {
       confirmButtonStyle: ButtonStyle(
         textStyle: WidgetStatePropertyAll(
           TextStyle(
+            inherit: false,
             fontSize: 16,
             color: AppColors.darkPrimaryText,
             fontWeight: FontWeight.w700,
@@ -80,6 +81,7 @@ ThemeData appThemeLight() {
       cancelButtonStyle: ButtonStyle(
         textStyle: WidgetStatePropertyAll(
           TextStyle(
+            inherit: false,
             fontSize: 16,
             color: AppColors.darkPrimaryText,
             fontWeight: FontWeight.w700,
@@ -105,6 +107,7 @@ ThemeData appThemeLight() {
       style: ButtonStyle(
         textStyle: WidgetStatePropertyAll(
           TextStyle(
+            inherit: false,
             fontSize: 16.sp,
             color: AppColors.darkPrimaryText,
             fontWeight: FontWeight.w700,
@@ -117,7 +120,7 @@ ThemeData appThemeLight() {
     //------------------------- Color Scheme Theme -----------------------------
     colorScheme: base.colorScheme.copyWith(
       surface: AppColors.lightSurface,
-      primary: AppColors.lightPrimaryText,
+      primary: AppColors.mainColor,
       secondary: AppColors.lightSurface,
       onPrimary: HexColor('#565656'),
       onSurface: AppColors.lightPrimaryText,

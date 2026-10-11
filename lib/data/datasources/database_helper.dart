@@ -1,13 +1,14 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../core/constants/app_constants.dart';
 
 /// Owns the single SQLite database connection for the app and defines
-/// the schema. Uses `sqflite_common_ffi` so it works natively on macOS
-/// desktop (the standard `sqflite` package is mobile-only).
+/// the schema. Uses `sqflite_common_ffi` on desktop (macOS/Windows/Linux)
+/// and standard `sqflite` on mobile (Android/iOS).
 ///
 /// This is intentionally a thin wrapper around raw SQL - the Repository
 /// layer above it is where business rules (atomic dispense, undo, etc.)
@@ -26,28 +27,56 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    // Required bootstrap for sqflite_common_ffi on desktop platforms.
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
+    final bool isDesktop =
+        Platform.isMacOS || Platform.isWindows || Platform.isLinux;
 
-    final Directory appSupportDir = await getApplicationSupportDirectory();
-    final String dbDir = p.join(appSupportDir.path, 'voucher_manager');
-    await Directory(dbDir).create(recursive: true);
-    final String dbPath = p.join(dbDir, AppConstants.dbName);
+    final String dbPath;
+    if (Platform.isAndroid || Platform.isIOS) {
+      String basePath;
+      try {
+        basePath = await sqflite.getDatabasesPath();
+      } catch (_) {
+        final dir = await getApplicationDocumentsDirectory();
+        basePath = dir.path;
+      }
+      dbPath = p.join(basePath, AppConstants.dbName);
+    } else {
+      final Directory appSupportDir = await getApplicationSupportDirectory();
+      final String dbDir = p.join(appSupportDir.path, 'voucher_manager');
+      await Directory(dbDir).create(recursive: true);
+      dbPath = p.join(dbDir, AppConstants.dbName);
+    }
 
-    return databaseFactory.openDatabase(
-      dbPath,
-      options: OpenDatabaseOptions(
+    if (isDesktop) {
+      // Required bootstrap for sqflite_common_ffi on desktop platforms.
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+
+      return databaseFactory.openDatabase(
+        dbPath,
+        options: OpenDatabaseOptions(
+          version: AppConstants.dbVersion,
+          onConfigure: _onConfigure,
+          onCreate: _onCreate,
+        ),
+      );
+    } else {
+      // Standard mobile openDatabase without FFI invocation
+      return sqflite.openDatabase(
+        dbPath,
         version: AppConstants.dbVersion,
-        onConfigure: (db) async {
-          // Enforce FK constraints and enable WAL for better concurrent
-          // read/write behaviour during bulk dispense transactions.
-          await db.execute('PRAGMA foreign_keys = ON');
-          await db.execute('PRAGMA journal_mode = WAL');
-        },
+        onConfigure: _onConfigure,
         onCreate: _onCreate,
-      ),
-    );
+      );
+    }
+  }
+
+  Future<void> _onConfigure(Database db) async {
+    // استخدام rawQuery بدلاً من execute عند تنفيذ أمر PRAGMA journal_mode
+    await db.rawQuery('PRAGMA journal_mode = WAL;');
+
+    // تفعيل الـ Foreign Keys
+    await db.execute('PRAGMA foreign_keys = ON;');
   }
 
   Future<void> _onCreate(Database db, int version) async {

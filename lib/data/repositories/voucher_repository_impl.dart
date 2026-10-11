@@ -29,7 +29,6 @@ class VoucherRepositoryImpl implements VoucherRepository {
   /// power one-click Undo. Cleared after undo, after the timeout, or
   /// when a new dispense happens.
   String? _lastTransactionId;
-  DateTime? _lastTransactionAt;
 
   VoucherRepositoryImpl({
     DatabaseHelper? dbHelper,
@@ -42,8 +41,10 @@ class VoucherRepositoryImpl implements VoucherRepository {
   // =====================================================================
 
   @override
-  Future<BatchModel> importPdfBatch(File pdfFile, {required VoucherFormat format}) async {
-    final pairs = await _pdfParser.extractVouchersFromPdf(pdfFile, format: format);
+  Future<BatchModel> importPdfBatch(File pdfFile,
+      {required VoucherFormat format}) async {
+    final pairs =
+        await _pdfParser.extractVouchersFromPdf(pdfFile, format: format);
     // extractVouchersFromPdf already throws EmptyPdfException /
     // RegexMismatchException for the zero-result cases, so by this
     // point `pairs` is guaranteed non-empty.
@@ -101,7 +102,7 @@ class VoucherRepositoryImpl implements VoucherRepository {
     String two(int n) => n.toString().padLeft(2, '0');
     return '${dt.year}_${two(dt.month)}_${two(dt.day)}_${two(dt.hour)}${two(dt.minute)}${two(dt.second)}';
   }
-  
+
   // ================================== Delete =================================
   @override
   Future<void> deleteBatch(String batchId) async {
@@ -129,7 +130,6 @@ class VoucherRepositoryImpl implements VoucherRepository {
     // Guard against a stale in-memory Undo pointer referencing rows
     // that no longer exist.
     _lastTransactionId = null;
-    _lastTransactionAt = null;
   }
 
   @override
@@ -169,7 +169,6 @@ class VoucherRepositoryImpl implements VoucherRepository {
     }
 
     _lastTransactionId = null;
-    _lastTransactionAt = null;
   }
 
   // =====================================================================
@@ -296,7 +295,6 @@ class VoucherRepositoryImpl implements VoucherRepository {
     }
 
     _lastTransactionId = transactionId;
-    _lastTransactionAt = DateTime.now();
 
     final message = _buildClipboardMessage(dispensed);
 
@@ -309,15 +307,11 @@ class VoucherRepositoryImpl implements VoucherRepository {
 
   String _buildClipboardMessage(List<Voucher> vouchers) {
     final buffer = StringBuffer();
-    buffer.writeln(AppConstants.messageHeader);
     for (int i = 0; i < vouchers.length; i++) {
-      final numeral = i < AppConstants.numberEmojis.length
-          ? AppConstants.numberEmojis[i]
-          : '${i + 1}.';
+      final numeral = i < vouchers.length ? i + 1 : '${i + 1}.';
       final v = vouchers[i];
-      buffer.writeln('$numeral يوزر: ${v.username} | باسورد: ${v.password}');
+      buffer.writeln('$numeral: User: ${v.username} | Pass: ${v.password}');
     }
-    buffer.writeln(AppConstants.messageFooter);
     return buffer.toString().trim();
   }
 
@@ -328,19 +322,9 @@ class VoucherRepositoryImpl implements VoucherRepository {
   @override
   Future<void> undoLastTransaction() async {
     final txId = _lastTransactionId;
-    final txAt = _lastTransactionAt;
 
-    if (txId == null || txAt == null) {
+    if (txId == null) {
       throw const UndoNotAvailableException();
-    }
-
-    final elapsed = DateTime.now().difference(txAt).inSeconds;
-    if (elapsed > AppConstants.undoTimeoutSeconds) {
-      _lastTransactionId = null;
-      _lastTransactionAt = null;
-      throw const UndoNotAvailableException(
-        'انتهت مهلة التراجع عن آخر عملية بيع.',
-      );
     }
 
     final db = await _dbHelper.database;
@@ -399,7 +383,106 @@ class VoucherRepositoryImpl implements VoucherRepository {
     }
 
     _lastTransactionId = null;
-    _lastTransactionAt = null;
+  }
+
+  // =====================================================================
+  // SYNC OFFSET
+  // =====================================================================
+
+  @override
+  Future<int> syncOffset({
+    required String batchId,
+    required int offsetIndex,
+  }) async {
+    if (offsetIndex <= 1) return 0; // لا يوجد شيء لتعليمه
+    final db = await _dbHelper.database;
+    int updatedCount = 0;
+
+    try {
+      await db.transaction((txn) async {
+        // جلب كل البطاقات AVAILABLE مرتبة ترتيباً تصاعدياً (الإدراج الأصلي)
+        // نأخذ (offsetIndex - 1) أول بطاقة AVAILABLE لتعليمها SOLD
+        final rows = await txn.rawQuery(
+          '''
+          SELECT id FROM ${AppConstants.tableVouchers}
+          WHERE batchId = ?
+          ORDER BY id ASC
+          LIMIT ?
+          ''',
+          [batchId, offsetIndex - 1],
+        );
+
+        if (rows.isEmpty) return;
+
+        final ids = rows.map((r) => r['id'] as int).toList();
+        final placeholders = List.filled(ids.length, '?').join(',');
+        final now = DateTime.now().toIso8601String();
+
+        // تعليم جميع هذه البطاقات كـ SOLD بشكل دفعي
+        updatedCount = await txn.rawUpdate(
+          '''
+          UPDATE ${AppConstants.tableVouchers}
+          SET status = ?, soldAt = ?, transactionId = ?
+          WHERE id IN ($placeholders)
+          AND status = ?
+          ''',
+          [
+            AppConstants.statusSold,
+            now,
+            'SYNC_OFFSET',
+            ...ids.map((id) => id.toString()),
+            AppConstants.statusAvailable,
+          ],
+        );
+
+        // تحديث عداد المبيعات في الدفعة
+        final batchRows = await txn.query(
+          AppConstants.tableBatches,
+          where: 'id = ?',
+          whereArgs: [batchId],
+        );
+        if (batchRows.isNotEmpty) {
+          final batch = BatchModel.fromMap(batchRows.first);
+          final newSoldCount =
+              (batch.soldVouchers + updatedCount).clamp(0, batch.totalVouchers);
+          final isNowSoldOut = newSoldCount >= batch.totalVouchers;
+          await txn.update(
+            AppConstants.tableBatches,
+            {
+              'soldVouchers': newSoldCount,
+              if (isNowSoldOut) 'completedAt': now,
+            },
+            where: 'id = ?',
+            whereArgs: [batchId],
+          );
+        }
+      });
+    } on DatabaseException catch (e) {
+      throw DatabaseOperationException(e.toString());
+    }
+
+    return updatedCount;
+  }
+
+  @override
+  Future<Voucher?> getVoucherAtPosition({
+    required String batchId,
+    required int position,
+  }) async {
+    if (position < 1) return null;
+    final db = await _dbHelper.database;
+    // نستخدم OFFSET (position-1) للحصول على البطاقة ذات الموضع المطلوب
+    final rows = await db.rawQuery(
+      '''
+      SELECT * FROM ${AppConstants.tableVouchers}
+      WHERE batchId = ?
+      ORDER BY id ASC
+      LIMIT 1 OFFSET ?
+      ''',
+      [batchId, position - 1],
+    );
+    if (rows.isEmpty) return null;
+    return Voucher.fromMap(rows.first);
   }
 
   // =====================================================================
@@ -489,9 +572,7 @@ class VoucherRepositoryImpl implements VoucherRepository {
   /// Whether Undo is currently possible (used by UI to enable/disable
   /// the Undo button reactively without triggering the exception path).
   bool get canUndo {
-    if (_lastTransactionId == null || _lastTransactionAt == null) return false;
-    final elapsed = DateTime.now().difference(_lastTransactionAt!).inSeconds;
-    return elapsed <= AppConstants.undoTimeoutSeconds;
+    return _lastTransactionId != null;
   }
 
   int? _firstIntValue(List<Map<String, Object?>> result) {

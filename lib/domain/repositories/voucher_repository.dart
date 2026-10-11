@@ -17,7 +17,8 @@ abstract class VoucherRepository {
   /// vouchers atomically, and marks the new batch as active
   /// (deactivating any previously active batch). Returns the created
   /// Batch.
-  Future<BatchModel> importPdfBatch(File pdfFile, {required VoucherFormat format});
+  Future<BatchModel> importPdfBatch(File pdfFile,
+      {required VoucherFormat format});
 
   // ---------------------------------------------------------------------
   // Batches
@@ -61,11 +62,33 @@ abstract class VoucherRepository {
   Future<void> voidVoucher(int voucherId);
 
   // ---------------------------------------------------------------------
+  // Sync Offset (مزامنة مؤشر بداية البيع)
+  // ---------------------------------------------------------------------
+
+  /// يُحوّل كل البطاقات من الرقم 1 حتى [offsetIndex] (حصراً) إلى حالة SOLD،
+  /// مما يُزامن مؤشر البيع مع جهاز آخر. يُعيد عدد البطاقات التي تم تعديلها.
+  ///
+  /// [offsetIndex]: الرقم الترتيبي للبطاقة التي يجب أن تكون التالية للبيع
+  /// (أي البطاقات 1..offsetIndex-1 ستُعلَّم SOLD).
+  Future<int> syncOffset({
+    required String batchId,
+    required int offsetIndex,
+  });
+
+  /// يُعيد بيانات البطاقة عند الموضع [position] (1-based) في الدفعة.
+  /// يُستخدم لعرض بطاقة المعاينة أثناء السحب على الـ Slider.
+  Future<Voucher?> getVoucherAtPosition({
+    required String batchId,
+    required int position,
+  });
+
+  // ---------------------------------------------------------------------
   // Stock / Analytics
   // ---------------------------------------------------------------------
 
   Future<int> getAvailableCount(String batchId);
-  Future<List<Voucher>> getVouchersByStatus(String batchId, VoucherStatus status);
+  Future<List<Voucher>> getVouchersByStatus(
+      String batchId, VoucherStatus status);
   Future<DailySummary> getDailySummary();
 }
 
@@ -97,4 +120,3 @@ class DailySummary {
     required this.totalBatches,
   });
 }
-

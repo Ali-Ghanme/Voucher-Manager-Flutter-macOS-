@@ -56,15 +56,15 @@ class AppConstants {
   /// Emoji numerals used for the numbered list (1..20). Falls back to
   /// plain numbers beyond index 20.
   static const List<String> numberEmojis = [
-    '1️⃣',
-    '2️⃣',
-    '3️⃣',
-    '4️⃣',
-    '5️⃣',
-    '6️⃣',
-    '7️⃣',
-    '8️⃣',
-    '9️⃣',
-    '🔟'
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    '10'
   ];
 }
