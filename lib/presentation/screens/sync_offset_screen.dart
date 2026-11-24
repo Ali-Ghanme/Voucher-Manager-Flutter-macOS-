@@ -50,13 +50,15 @@ class _SyncOffsetScreenState extends ConsumerState<SyncOffsetScreen> {
   }
 
   void _increment() {
-    if (_selectedInt < _totalVouchers)
+    if (_selectedInt < _totalVouchers) {
       setState(() => _selectedOffset = (_selectedInt + 1).toDouble());
+    }
   }
 
   void _decrement() {
-    if (_selectedInt > 1)
+    if (_selectedInt > 1) {
       setState(() => _selectedOffset = (_selectedInt - 1).toDouble());
+    }
   }
 
   Future<void> _applySync() async {

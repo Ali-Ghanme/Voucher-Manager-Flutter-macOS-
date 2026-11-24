@@ -40,60 +40,66 @@ class PdfParserService {
     return pairs;
   }
 
+  /// تحويل الأرقام المشرقية/العربية (٠-٩) إلى أرقام غربية (0-9)
+  static String _normalizeDigits(String input) {
+    const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+    const easternArabicIndic = '۰۱۲۳۴۵۶۷۸۹';
+    return input.split('').map((char) {
+      final idx1 = arabicIndic.indexOf(char);
+      if (idx1 != -1) return idx1.toString();
+      final idx2 = easternArabicIndic.indexOf(char);
+      if (idx2 != -1) return idx2.toString();
+      return char;
+    }).join('');
+  }
+
   List<ExtractedPair> _extractPairsFromText(String text, VoucherFormat format) {
-    final List<ExtractedPair> results = [];
-    final Set<String> seenKeys = {};
+    List<ExtractedPair> pairs = _parsePairsWithFormat(text, format);
 
-    // 1. تنظيف النص المرجعي وإزالة العبارات والرموز غير الرقمية
-    final String cleanText = text
-        .replaceAll(
-            RegExp(
-                r'Fast\s*Net|FastNet|شيكل|ساعات|3M|نتمنى لكم أوقات ممتعة|تتمنى لكم أوقات ممتعة|لتمنى لكم أوقات ممتعة',
-                caseSensitive: false),
-            ' ')
-        .replaceAll(
-            RegExp(r'[^\d]'), ''); // إزالة كل شيء والاستبقاء على الأرقام فقط
-
-    debugPrint(
-        '📄 [PDF Raw Digits] طول سلسلة الأرقام الإجمالية: ${cleanText.length}');
-
-    // 2. مطابقة عامة: أي 6 أرقام (اسم مستخدم) متبوعة بـ 4 أرقام (كلمة مرور)
-    // هذا يدعم البادئات (70 و 42 وأي بادئة مستقبليّة)
-    final RegExp generalVoucherRegex = RegExp(r'(\d{6})(\d{4})');
-
-    final matches = generalVoucherRegex.allMatches(cleanText);
-
-    for (final match in matches) {
-      final String username = match.group(1)!;
-      final String password = match.group(2)!;
-
-      final key = '$username|$password';
-      if (seenKeys.add(key)) {
-        results.add(ExtractedPair(username: username, password: password));
+    // إذا لم يتم العثور على أزواج بالصيغة المحددة، وكانت مختلفة عن نمط 5/4،
+    // يتم تجربة نمط 5/4 تلقائياً كحماية ذكية في حال نسيان المستخدم تغيير الصيغة
+    if (pairs.isEmpty &&
+        (format.usernameLength != 5 ||
+            format.passwordMinLength != 4 ||
+            format.passwordMaxLength != 4)) {
+      debugPrint(
+          '⚠️ [PDF] لم يتم العثور على أزواج بالصيغة المحددة، تجربة نمط 5/4 تلقائياً...');
+      final fallbackPairs =
+          _parsePairsWithFormat(text, VoucherFormat.standard54);
+      if (fallbackPairs.isNotEmpty) {
+        debugPrint(
+            '✅ [PDF] تم استخراج ${fallbackPairs.length} كرت بنجاح عبر نمط 5/4.');
+        pairs = fallbackPairs;
       }
     }
 
-    // 3. Fallback: التجميع المتتابع على مستوى الخانات الفردية إذا تطلب الأمر
-    if (results.isEmpty) {
-      final List<String> digits = cleanText.split('');
-      int i = 0;
+    return pairs;
+  }
 
-      while (i <= digits.length - 10) {
-        final username = digits.sublist(i, i + 6).join('');
-        final password = digits.sublist(i + 6, i + 10).join('');
+  List<ExtractedPair> _parsePairsWithFormat(String text, VoucherFormat format) {
+    // 1. تحويل الأرقام المشرقية/العربية إلى إنجليزية
+    final String cleanText = _normalizeDigits(text);
 
-        final key = '$username|$password';
-        if (seenKeys.add(key)) {
-          results.add(ExtractedPair(username: username, password: password));
-          i += 10; // القفز للبطاقة التالية
-          continue;
-        }
-        i++;
-      }
+    // 2. استخراج سلسلة الأرقام الصافية الكاملة
+    final String digits = cleanText.replaceAll(RegExp(r'[^\d]'), '');
+    debugPrint('📄 [PDF Raw Digits] طول سلسلة الأرقام: ${digits.length}');
+
+    final int uLen = format.usernameLength;
+    final int pLen = format.passwordMinLength;
+    final int voucherLen = uLen + pLen; // 5 + 4 = 9
+
+    final List<ExtractedPair> pairs = [];
+
+    // 3. التقطيع المباشر (Chunking) لكل كرت بدقة
+    for (int i = 0; i <= digits.length - voucherLen; i += voucherLen) {
+      pairs.add(ExtractedPair(
+        username: digits.substring(i, i + uLen),
+        password: digits.substring(i + uLen, i + voucherLen),
+      ));
     }
 
-    debugPrint('🔢 [PDF] نجاح استخراج ${results.length} كرت بنجاح.');
-    return results;
+    debugPrint('🔢 [PDF] تم استخراج ${pairs.length} كرت بنجاح.');
+    return pairs;
   }
 }
 

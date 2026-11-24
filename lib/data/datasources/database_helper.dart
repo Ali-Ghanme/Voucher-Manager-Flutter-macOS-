@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
@@ -30,6 +31,10 @@ class DatabaseHelper {
     final bool isDesktop =
         Platform.isMacOS || Platform.isWindows || Platform.isLinux;
 
+    // فصل اسم قاعدة البيانات في وضع الـ Debug عن الـ Release
+    const String actualDbName =
+        kDebugMode ? 'voucher_manager_debug.db' : AppConstants.dbName;
+
     final String dbPath;
     if (Platform.isAndroid || Platform.isIOS) {
       String basePath;
@@ -39,14 +44,13 @@ class DatabaseHelper {
         final dir = await getApplicationDocumentsDirectory();
         basePath = dir.path;
       }
-      dbPath = p.join(basePath, AppConstants.dbName);
+      dbPath = p.join(basePath, actualDbName); // استخدام الاسم المعدل
     } else {
       final Directory appSupportDir = await getApplicationSupportDirectory();
       final String dbDir = p.join(appSupportDir.path, 'voucher_manager');
       await Directory(dbDir).create(recursive: true);
-      dbPath = p.join(dbDir, AppConstants.dbName);
+      dbPath = p.join(dbDir, actualDbName); // استخدام الاسم المعدل
     }
-
     if (isDesktop) {
       // Required bootstrap for sqflite_common_ffi on desktop platforms.
       sqfliteFfiInit();

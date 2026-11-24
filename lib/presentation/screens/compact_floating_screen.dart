@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:voucher_manager/core/utils/colors/app_colors.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -125,14 +126,19 @@ class _CompactEmptyState extends StatelessWidget {
           children: [
             Icon(Icons.inbox_outlined,
                 size: 40, color: onSurface.withOpacity(0.38)),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.sp),
             Text('لا توجد دفعة نشطة',
                 style: TextStyle(color: onSurface.withOpacity(0.7))),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => _importPdf(context),
-              icon: const Icon(Icons.upload_file, size: 18),
-              label: const Text('استيراد PDF'),
+            SizedBox(height: 16.sp),
+            ButtonWidget(
+              onPress: () => _importPdf(context),
+              color: AppColors.mainColor,
+            ),
+            ButtonWidget(
+              onPress: () => _importPdf(context),
+              name: 'استيراد PDF',
+              icons: Icons.upload_file,
+              color: Theme.of(context).colorScheme.surface,
             ),
           ],
         ),

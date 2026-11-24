@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:voucher_manager/core/utils/button_widget.dart';
+import 'package:voucher_manager/core/utils/colors/app_colors.dart';
 
 import '../../data/models/voucher_format.dart';
 
@@ -20,9 +22,9 @@ class ImportFormatDialog extends StatefulWidget {
 }
 
 class _ImportFormatDialogState extends State<ImportFormatDialog> {
-  final _userLenCtrl = TextEditingController(text: '7');
-  final _passMinCtrl = TextEditingController(text: '2');
-  final _passMaxCtrl = TextEditingController(text: '3');
+  final _userLenCtrl = TextEditingController(text: '5');
+  final _passMinCtrl = TextEditingController(text: '4');
+  final _passMaxCtrl = TextEditingController(text: '4');
 
   @override
   void dispose() {
@@ -45,7 +47,10 @@ class _ImportFormatDialogState extends State<ImportFormatDialog> {
     final passMin = int.tryParse(_passMinCtrl.text.trim());
     final passMax = int.tryParse(_passMaxCtrl.text.trim());
 
-    if (userLen == null || passMin == null || passMax == null || passMin > passMax) {
+    if (userLen == null ||
+        passMin == null ||
+        passMax == null ||
+        passMin > passMax) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('الرجاء إدخال أرقام صحيحة ومنطقية')),
       );
@@ -69,20 +74,21 @@ class _ImportFormatDialogState extends State<ImportFormatDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _applyPreset(VoucherFormat.classic),
-                  child: const Text('نمط 7/2-3 (كلاسيكي)'),
-                ),
+              OutlinedButton(
+                onPressed: () => _applyPreset(VoucherFormat.standard54),
+                child: const Text('نمط 5/4 (شائع)'),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _applyPreset(VoucherFormat.compact),
-                  child: const Text('نمط 6/1 (مختصر)'),
-                ),
+              OutlinedButton(
+                onPressed: () => _applyPreset(VoucherFormat.classic),
+                child: const Text('نمط 7/2-3 (كلاسيكي)'),
+              ),
+              OutlinedButton(
+                onPressed: () => _applyPreset(VoucherFormat.compact),
+                child: const Text('نمط 6/1 (مختصر)'),
               ),
             ],
           ),
@@ -99,7 +105,8 @@ class _ImportFormatDialogState extends State<ImportFormatDialog> {
                 child: TextField(
                   controller: _passMinCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'أقل عدد خانات للباسورد'),
+                  decoration: const InputDecoration(
+                      labelText: 'أقل عدد خانات للباسورد'),
                 ),
               ),
               const SizedBox(width: 8),
@@ -107,7 +114,8 @@ class _ImportFormatDialogState extends State<ImportFormatDialog> {
                 child: TextField(
                   controller: _passMaxCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'أعلى عدد خانات للباسورد'),
+                  decoration: const InputDecoration(
+                      labelText: 'أعلى عدد خانات للباسورد'),
                 ),
               ),
             ],
@@ -115,8 +123,27 @@ class _ImportFormatDialogState extends State<ImportFormatDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('إلغاء')),
-        ElevatedButton(onPressed: _confirm, child: const Text('استيراد')),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: ButtonWidget(
+                onPress: () => Navigator.of(context).pop(),
+                name: 'إلغاء',
+                icons: Icons.close,
+                color: AppColors.aleart,
+              ),
+            ),
+            Expanded(
+              child: ButtonWidget(
+                onPress: _confirm,
+                name: 'استيراد',
+                icons: Icons.upload_file,
+                color: AppColors.mainColor,
+              ),
+            ),
+          ],
+        )
       ],
     );
   }

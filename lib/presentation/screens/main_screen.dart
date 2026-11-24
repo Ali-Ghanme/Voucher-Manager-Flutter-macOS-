@@ -81,7 +81,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               tooltip: 'مزامنة مؤشر البيع',
               icon: const Icon(Icons.sync),
               onPressed: () async {
-                final synced = await SyncOffsetScreen.push(context, state.activeBatch!);
+                final synced =
+                    await SyncOffsetScreen.push(context, state.activeBatch!);
                 if (synced) await notifier.refresh();
               },
             ),
@@ -354,10 +355,11 @@ class _NoActiveBatchCard extends StatelessWidget {
                 style:
                     TextStyle(fontSize: 16, color: onSurface.withOpacity(0.7))),
             const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: onImport,
-              icon: const Icon(Icons.upload_file),
-              label: const Text('استيراد ملف PDF'),
+            ButtonWidget(
+              onPress: () => onImport(),
+              name: 'استيراد ملف PDF',
+              icons: Icons.upload_file,
+              color: AppColors.mainColor,
             ),
           ],
         ),
